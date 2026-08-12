@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if true; // Anyone can read user profiles
+      allow write: if isOwner(userId); // Only owner can update their profile
+      
+      // User's posts index subcollection
+      match /posts/{postId} {
+        allow read: if true;
+        allow write: if isSignedIn();
+      }
+    }
+    
+    // Posts collection
+    match /posts/{postId} {
+      allow read: if true; // Anyone can read posts
+      allow create: if isSignedIn(); // Any authenticated user can create posts
+      allow update: if isSignedIn(); // Any authenticated user can update (for likes)
+      allow delete: if isSignedIn() && 
+                      (resource.data.uid == request.auth.uid || 
+                       resource.data.author.uid == request.auth.uid); // Only owner can delete
+      
+      // Likes subcollection
+      match /likes/{likeId} {
+        allow read: if true;
+        allow write: if isSignedIn();
+      }
+      
+      // Comments subcollection
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update: if isSignedIn() && resource.data.actorId == request.auth.uid;
+        allow delete: if isSignedIn() && 
+                        (resource.data.actorId == request.auth.uid || 
+                         get(/databases/$(database)/documents/posts/$(postId)).data.uid == request.auth.uid);
+      }
+    }
+    
+    // Follows collection
+    match /follows/{userId}/followers/{followerId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    
+    match /follows/{userId}/following/{followingId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    
+    // Notifications collection
+    match /notifications/{userId}/items/{notifId} {
+      allow read: if isOwner(userId);
+      allow write: if isSignedIn(); // Functions can write, user can mark as read
+    }
+    
+    // Chats collection
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && 
+                    request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && 
+                      request.auth.uid in resource.data.participants;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && 
+                      request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if isSignedIn() && 
+                        request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+    
+    // Reports collection
+    match /reports/{reportId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+    }
+  }
+}
