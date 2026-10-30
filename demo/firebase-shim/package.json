@@ -1,0 +1,12 @@
+{
+  "name": "firebase",
+  "version": "10.14.1-demo",
+  "description": "In-browser stand-in for the Firebase Web SDK used by the PawSnap demo build. No network, no Firebase project.",
+  "private": true,
+  "exports": {
+    "./app": "./app.js",
+    "./auth": "./auth.js",
+    "./firestore": "./firestore.js",
+    "./storage": "./storage.js"
+  }
+}

@@ -3,6 +3,8 @@
 The backend and data layer I wrote for **PawSnap**, a pet social platform
 built by a team of three at Chiang Mai University in October 2025.
 
+**Live demo:** https://zann208.github.io/pawsnap/ (runs in the browser with sample data; see [`demo/`](demo/))
+
 This repository contains **only the files I authored.** It is an extract, not
 the whole application. The complete project, including the React front end,
 lives at **[MawinSkalet/Petsnaps](https://github.com/MawinSkalet/Petsnaps)**.

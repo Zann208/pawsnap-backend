@@ -1,0 +1,118 @@
+--- a/package.json
++++ b/package.json
+@@ -4,7 +4,7 @@
+   "private": true,
+   "dependencies": {
+     "clsx": "^2.1.1",
+-    "firebase": "^10.14.1",
++    "firebase": "file:./demo/firebase-shim",
+     "lucide-react": "^0.263.1",
+     "react": "^18.3.1",
+     "react-dom": "^18.3.1",
+@@ -21,7 +21,7 @@
+   },
+   "scripts": {
+     "start": "react-scripts start",
+-    "build": "set \"CI=false\" && react-scripts build",
++    "build": "react-scripts build",
+     "vercel-build": "react-scripts build",
+     "test": "react-scripts test",
+     "eject": "react-scripts eject"
+@@ -42,5 +42,6 @@
+       "last 1 firefox version",
+       "last 1 safari version"
+     ]
+-  }
+-}
++  },
++  "homepage": "."
++}
+\ No newline at end of file
+--- a/public/index.html
++++ b/public/index.html
+@@ -7,14 +7,13 @@
+     <meta name="theme-color" content="#000000" />
+     <meta
+       name="description"
+-      content="Web site created using create-react-app"
++      content="PawSnap, a pet social platform. Demo build that runs entirely in the browser with sample data."
+     />
+     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+ 
+     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+ 
+-      <script src="https://cdn.tailwindcss.com"></script>
+-    <title>React App</title>
++    <title>PawSnap demo</title>
+   </head>
+   <body>
+     <noscript>You need to enable JavaScript to run this app.</noscript>
+--- a/src/App.js
++++ b/src/App.js
+@@ -1,6 +1,6 @@
+ import "./firebase";
+ import React, { useRef } from "react";
+-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
++import { HashRouter as Router, Routes, Route } from "react-router-dom";
+ import { AuthProvider } from "./context/AuthContext";
+ import { DataProvider } from "./context/DataContext";
+ import Layout from "./components/Layout";
+--- a/src/index.js
++++ b/src/index.js
+@@ -2,12 +2,14 @@
+ import ReactDOM from 'react-dom/client';
+ import './index.css';
+ import App from './App';
++import DemoBar from './DemoBar';
+ import reportWebVitals from './reportWebVitals';
+ 
+ const root = ReactDOM.createRoot(document.getElementById('root'));
+ root.render(
+   <React.StrictMode>
+     <App />
++    <DemoBar />
+   </React.StrictMode>
+ );
+ 
+--- a/src/components/Layout.js
++++ b/src/components/Layout.js
+@@ -71,7 +71,7 @@
+           <div className="flex items-center space-x-3">
+             <div className="w-10 h-10 bg-gradient-to-br from-[#E2B887] to-[#B5EAD7] rounded-full flex items-center justify-center overflow-hidden">
+               <img
+-                src="/Pawsnap.png"
++                src="Pawsnap.png"
+                 className="w-full h-full object-contain scale-150"
+               />
+             </div>
+--- a/src/pages/AuthScreen.js
++++ b/src/pages/AuthScreen.js
+@@ -16,8 +16,8 @@
+ import { useAuth } from "../context/AuthContext";
+ 
+ function AuthScreen() {
+-  const [email, setEmail] = useState("");
+-  const [password, setPassword] = useState("");
++  const [email, setEmail] = useState("demo@pawsnap.app");
++  const [password, setPassword] = useState("pawsnap");
+   const [petName, setPetName] = useState("");
+   const [error, setError] = useState("");
+   const [authLoading, setAuthLoading] = useState(false);
+--- a/src/pages/ChatPage.js
++++ b/src/pages/ChatPage.js
+@@ -149,11 +149,13 @@
+           <div className="text-xs text-[#8B6F47]/60 mb-1">Recent</div>
+           <ul className="space-y-1">
+             {chatList.map(c => {
+-              const others = (c.participants || []).filter(id => id !== me).join(", ");
++              const otherIds = (c.participants || []).filter(id => id !== me);
++              const others = otherIds.map(id => (allUsers.find(u => u.uid === id || u.id === id) || {}).displayName || id).join(", ");
++              const otherUser = allUsers.find(u => u.uid === otherIds[0] || u.id === otherIds[0]);
+               return (
+                 <li key={c.id}>
+                   <button
+-                    onClick={() => openChatWith({ uid: directChatId(...(c.participants || [])).replace(`${me}_`, "").replace(`_${me}`, "") })} // best-effort
++                    onClick={() => openChatWith(otherUser || { uid: directChatId(...(c.participants || [])).replace(`${me}_`, "").replace(`_${me}`, "") })}
+                     className={`w-full text-left p-2 rounded hover:bg-[#FFF4E6] ${c.id === chatId ? "bg-[#FFF4E6]" : ""}`}
+                   >
+                     <div className="text-sm text-[#8B6F47]">{others || "Chat"}</div>
